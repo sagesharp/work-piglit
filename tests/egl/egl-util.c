@@ -80,7 +80,6 @@ egl_init_test(struct egl_test *test)
 	test->window_width = egl_default_window_width;
 	test->window_height = egl_default_window_height;
 	test->stop_on_failure = true;
-	test->result = PIGLIT_FAIL;
 }
 
 EGLSurface
@@ -120,6 +119,8 @@ create_window(struct egl_state *state)
 	vinfo = XGetVisualInfo(state->dpy, VisualIDMask, &template, &count);
 	if (count != 1) {
 		fprintf(stderr, "XGetVisualInfo() failed\n");
+		if (vinfo)
+			XFree(vinfo);
 		return PIGLIT_FAIL;
 	}
 
@@ -186,12 +187,13 @@ check_extensions(struct egl_state *state, const struct egl_test *test)
 	}
 }
 
-int
-egl_util_run(struct egl_test *test, int argc, char *argv[])
+enum piglit_result
+egl_util_run(const struct egl_test *test, int argc, char *argv[])
 {
 	struct egl_state state;
 	EGLint count;
 	int i, dispatch_api, api_bit = EGL_OPENGL_BIT;
+	enum piglit_result result = PIGLIT_PASS;
 
 	EGLint ctxAttribsES[] = {
 		EGL_CONTEXT_CLIENT_VERSION, 0,
@@ -209,7 +211,7 @@ egl_util_run(struct egl_test *test, int argc, char *argv[])
 	state.dpy = XOpenDisplay(NULL);
 	if (state.dpy == NULL) {
 		fprintf(stderr, "couldn't open display\n");
-		test->result = PIGLIT_FAIL;
+		result = PIGLIT_FAIL;
 		goto fail;
 	}
 
@@ -246,13 +248,13 @@ egl_util_run(struct egl_test *test, int argc, char *argv[])
 	state.egl_dpy = eglGetDisplay(state.dpy);
 	if (state.egl_dpy == EGL_NO_DISPLAY) {
 		fprintf(stderr, "eglGetDisplay() failed\n");
-		test->result = PIGLIT_FAIL;
+		result = PIGLIT_FAIL;
 		goto fail;
 	}
 
 	if (!eglInitialize(state.egl_dpy, &state.major, &state.minor)) {
 		fprintf(stderr, "eglInitialize() failed\n");
-		test->result = PIGLIT_FAIL;
+		result = PIGLIT_FAIL;
 		goto fail;
 	}
 
@@ -261,7 +263,7 @@ egl_util_run(struct egl_test *test, int argc, char *argv[])
 	if (!eglChooseConfig(state.egl_dpy, test->config_attribs, &state.cfg, 1, &count) ||
 	    count == 0) {
 		fprintf(stderr, "eglChooseConfig() failed\n");
-		test->result = PIGLIT_FAIL;
+		result = PIGLIT_FAIL;
 		goto fail;
 	}
 
@@ -269,47 +271,45 @@ egl_util_run(struct egl_test *test, int argc, char *argv[])
 				     EGL_NO_CONTEXT, ctxAttribs);
 	if (state.ctx == EGL_NO_CONTEXT) {
 		fprintf(stderr, "eglCreateContext() failed\n");
-		test->result = PIGLIT_FAIL;
+		result = PIGLIT_FAIL;
 		goto fail;
 	}
 
 	state.width = test->window_width;
 	state.height = test->window_height;
-	test->result = create_window(&state);
-	if (test->result != PIGLIT_PASS)
-		goto destroy_ctx;
+	result = create_window(&state);
+	if (result != PIGLIT_PASS)
+		goto fail;
 
 	state.surf = eglCreateWindowSurface(state.egl_dpy,
 					    state.cfg, state.win, NULL);
 	if (state.surf == EGL_NO_SURFACE) {
 		fprintf(stderr, "eglCreateWindowSurface() failed\n");
-		test->result = PIGLIT_FAIL;
-		goto destroy_window;
+		result = PIGLIT_FAIL;
+		goto fail;
 	}
 
 	if (!eglMakeCurrent(state.egl_dpy,
 			    state.surf, state.surf, state.ctx)) {
 		fprintf(stderr, "eglMakeCurrent() failed\n");
-		test->result = PIGLIT_FAIL;
-		goto destroy_window;
+		result = PIGLIT_FAIL;
+		goto fail;
 	}
 
 	piglit_dispatch_default_init(dispatch_api);
 
-	test->result = event_loop(&state, test);
+	result = event_loop(&state, test);
 
-destroy_window:
-	glFinish();
-	eglMakeCurrent(state.egl_dpy, EGL_NO_SURFACE, EGL_NO_SURFACE, state.ctx);
-	XDestroyWindow(state.dpy, state.win);
-destroy_ctx:
-	eglMakeCurrent(state.egl_dpy, EGL_NO_SURFACE, EGL_NO_SURFACE, EGL_NO_CONTEXT);
-	eglDestroyContext(state.egl_dpy, state.ctx);
-	eglTerminate(state.egl_dpy);
 fail:
+	if (state.egl_dpy) {
+		eglMakeCurrent(state.egl_dpy, EGL_NO_SURFACE, EGL_NO_SURFACE, EGL_NO_CONTEXT);
+		eglDestroyContext(state.egl_dpy, state.ctx);
+	}
+	if (state.win)
+		XDestroyWindow(state.dpy, state.win);
+	if (state.egl_dpy)
+		eglTerminate(state.egl_dpy);
 	if (test->stop_on_failure)
-		piglit_report_result(test->result);
-	if (test->result == PIGLIT_PASS)
-		return EXIT_SUCCESS;
-	return EXIT_FAILURE;
+		piglit_report_result(result);
+	return result;
 }
