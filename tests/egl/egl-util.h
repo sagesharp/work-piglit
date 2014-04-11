@@ -35,6 +35,8 @@ struct egl_test {
 	enum piglit_result (*draw)(struct egl_state *state);
 	EGLint window_width;
 	EGLint window_height;
+	bool stop_on_failure;
+	enum piglit_result result;
 };
 
 static const EGLint egl_default_attribs[] = {
@@ -60,7 +62,7 @@ EGLSurface
 egl_util_create_pixmap(struct egl_state *state,
 		       int width, int height, const EGLint *attribs);
 
-int egl_util_run(const struct egl_test *test, int argc, char *argv[]);
+int egl_util_run(struct egl_test *test, int argc, char *argv[]);
 
 int
 egl_probe_front_pixel_rgb(struct egl_state *state,
