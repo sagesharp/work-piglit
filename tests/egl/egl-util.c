@@ -284,6 +284,7 @@ egl_util_run(struct egl_test *test, int argc, char *argv[], bool report_result)
 	piglit_dispatch_default_init(dispatch_api);
 
 	test->result = event_loop(&state, test);
+	glFinish();
 
 	eglTerminate(state.egl_dpy);
 
