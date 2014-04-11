@@ -204,5 +204,5 @@ main(int argc, char *argv[])
 	test.window_width = window_width;
 	test.window_height = window_height;
 
-	return egl_util_run(&test, argc, argv);
+	return egl_util_run(&test, argc, argv, true);
 }

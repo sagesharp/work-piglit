@@ -78,6 +78,7 @@ egl_init_test(struct egl_test *test)
 	test->extensions = no_extensions;
 	test->window_width = egl_default_window_width;
 	test->window_height = egl_default_window_height;
+	test->result = PIGLIT_FAIL;
 }
 
 EGLSurface
@@ -182,11 +183,10 @@ check_extensions(struct egl_state *state, const struct egl_test *test)
 }
 
 int
-egl_util_run(const struct egl_test *test, int argc, char *argv[])
+egl_util_run(struct egl_test *test, int argc, char *argv[], bool report_result)
 {
 	struct egl_state state;
 	EGLint count;
-	enum piglit_result result;
 	int i, dispatch_api, api_bit = EGL_OPENGL_BIT;
 
 	EGLint ctxAttribsES[] = {
@@ -283,11 +283,12 @@ egl_util_run(const struct egl_test *test, int argc, char *argv[])
 
 	piglit_dispatch_default_init(dispatch_api);
 
-	result = event_loop(&state, test);
+	test->result = event_loop(&state, test);
 
 	eglTerminate(state.egl_dpy);
 
-	piglit_report_result(result);
+	if (report_result)
+		piglit_report_result(test->result);
 
 	return EXIT_SUCCESS;
 }

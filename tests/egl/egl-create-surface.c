@@ -75,5 +75,5 @@ main(int argc, char *argv[])
 	egl_init_test(&test);
 	test.draw = draw;
 
-	return egl_util_run(&test, argc, argv);
+	return egl_util_run(&test, argc, argv, true);
 }
