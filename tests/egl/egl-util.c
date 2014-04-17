@@ -182,12 +182,15 @@ check_extensions(struct egl_state *state, const struct egl_test *test)
 	}
 }
 
+static Window testwin;
+
 int
 egl_util_run(struct egl_test *test, int argc, char *argv[], bool report_result)
 {
 	struct egl_state state;
 	EGLint count;
-	int i, dispatch_api, api_bit = EGL_OPENGL_BIT;
+	int i, ok, dispatch_api, api_bit = EGL_OPENGL_BIT;
+	EGLBoolean egl_ok;
 
 	EGLint ctxAttribsES[] = {
 		EGL_CONTEXT_CLIENT_VERSION, 0,
@@ -264,9 +267,20 @@ egl_util_run(struct egl_test *test, int argc, char *argv[], bool report_result)
 		piglit_report_result(PIGLIT_FAIL);
 	}
 
+	/*
+	 * Everything above this should be an initiatize once call.  Should be
+	 * able to share the context between piglit subtests.  The code is
+	 * currently erroring out because the driver will crash if eglInitialize
+	 * is called twice.
+	 *
+	 * Before we destroy the WindowSurface, we need to make that surface not
+	 * be current.
+	 */
+
 	state.width = test->window_width;
 	state.height = test->window_height;
 	create_window(&state);
+	testwin = state.win;
 
 	state.surf = eglCreateWindowSurface(state.egl_dpy,
 					    state.cfg, state.win, NULL);
@@ -286,7 +300,11 @@ egl_util_run(struct egl_test *test, int argc, char *argv[], bool report_result)
 	test->result = event_loop(&state, test);
 	glFinish();
 
-	eglTerminate(state.egl_dpy);
+	egl_ok = eglMakeCurrent(state.egl_dpy, EGL_NO_SURFACE, EGL_NO_SURFACE, state.ctx);
+	ok = XUnmapWindow(state.dpy, state.win);
+	ok = XDestroyWindow(state.dpy, state.win);
+	egl_ok = eglDestroyContext(state.egl_dpy, state.ctx);
+	egl_ok = eglTerminate(state.egl_dpy);
 
 	if (report_result)
 		piglit_report_result(test->result);

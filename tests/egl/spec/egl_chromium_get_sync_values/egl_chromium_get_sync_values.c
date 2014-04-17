@@ -188,14 +188,14 @@ init_eglGetSyncValuesCHROMIUM_ust_test(void *test_data)
 
 static const struct piglit_subtest subtests[] = {
 	{
-		"eglGetSyncValuesCHROMIUM_null_pointers",
-		"eglGetSyncValuesCHROMIUM_null_pointers",
-		init_eglGetSyncValuesCHROMIUM_null_pointers,
-	},
-	{
 		"eglGetSyncValuesCHROMIUM_ust_test",
 		"eglGetSyncValuesCHROMIUM_ust_test",
 		init_eglGetSyncValuesCHROMIUM_ust_test,
+	},
+	{
+		"eglGetSyncValuesCHROMIUM_null_pointers",
+		"eglGetSyncValuesCHROMIUM_null_pointers",
+		init_eglGetSyncValuesCHROMIUM_null_pointers,
 	},
 	{0},
 };
