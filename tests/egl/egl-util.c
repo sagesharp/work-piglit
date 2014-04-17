@@ -301,7 +301,6 @@ egl_util_run(struct egl_test *test, int argc, char *argv[], bool report_result)
 	glFinish();
 
 	egl_ok = eglMakeCurrent(state.egl_dpy, EGL_NO_SURFACE, EGL_NO_SURFACE, state.ctx);
-	ok = XUnmapWindow(state.dpy, state.win);
 	ok = XDestroyWindow(state.dpy, state.win);
 	egl_ok = eglDestroyContext(state.egl_dpy, state.ctx);
 	egl_ok = eglTerminate(state.egl_dpy);
