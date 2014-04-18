@@ -302,6 +302,7 @@ egl_util_run(struct egl_test *test, int argc, char *argv[], bool report_result)
 
 	egl_ok = eglMakeCurrent(state.egl_dpy, EGL_NO_SURFACE, EGL_NO_SURFACE, state.ctx);
 	ok = XDestroyWindow(state.dpy, state.win);
+	egl_ok = eglMakeCurrent(state.egl_dpy, EGL_NO_SURFACE, EGL_NO_SURFACE, EGL_NO_CONTEXT);
 	egl_ok = eglDestroyContext(state.egl_dpy, state.ctx);
 	egl_ok = eglTerminate(state.egl_dpy);
 
